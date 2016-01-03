@@ -4,14 +4,8 @@ import {window, workspace, commands, Disposable, ExtensionContext, StatusBarAlig
 import * as vscode from 'vscode';
 import { EOL } from 'os';
 
-// this method is called when your extension is activated. activation is
-// controlled by the activation events defined in package.json
 export function activate(ctx: ExtensionContext) {
-
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "Wordcount" is now active!');
-
+    
     // create a new word counter
     let wordCounter = new WordCounter();
     let controller = new WordCounterController(wordCounter);
@@ -31,7 +25,7 @@ export class WordCounter {
             return;
         }
 
-        // only one block so that we don't save only once
+        // only one block so that we save only once
         editor.edit(function(editbuilder) {
             
             let doc = editor.document;

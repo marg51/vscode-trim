@@ -38,12 +38,12 @@ export class WordCounter {
           
             // trim all lines
             doc._lines.map((line, index) => {
-                if (line.match(/[\S]$/ )) {
+                if (line.match(/[\s]$/ )) {
                     var addText ="";
                     if (index > 1 && index === doc.lineCount-1 && line !== '') {
                         addText = EOL
                     }
-                    editbuilder.replace(new vscode.Range(new vscode.Position(index, 0), new vscode.Position(index, line.length)), line.replace(/[\S]+$/,'')+addText);
+                    editbuilder.replace(new vscode.Range(new vscode.Position(index, 0), new vscode.Position(index, line.length)), line.replace(/[\s]+$/,'')+addText);
                 }
                 else if (index > 1 && index === doc.lineCount-1 && line !== '') {
                    editbuilder.insert(new vscode.Position(index, line.length), EOL);

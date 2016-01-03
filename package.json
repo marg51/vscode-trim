@@ -17,8 +17,8 @@
 		"theme": "dark"
 	},
 	"activationEvents": [
-		"onLanguage:markdown"
-	],
+        "onCommand:workbench.action.files.save"
+    ],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Microsoft/vscode-wordcount.git"

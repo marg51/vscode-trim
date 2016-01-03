@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import {window, workspace, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} from 'vscode';
+import * as vscode from 'vscode';
+import { EOL } from 'os';
 
 // this method is called when your extension is activated. activation is
 // controlled by the activation events defined in package.json
@@ -22,78 +24,58 @@ export function activate(ctx: ExtensionContext) {
 
 export class WordCounter {
 
-    private _statusBarItem: StatusBarItem;
-
-    public updateWordCount() {
-        
-        // Create as needed
-        if (!this._statusBarItem) {
-            this._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
-        } 
-
+    public trim() {
         // Get the current text editor
         let editor = window.activeTextEditor;
         if (!editor) {
-            this._statusBarItem.hide();
             return;
         }
 
-        let doc = editor.document;
+        // only one block so that we don't save only once
+        editor.edit(function(editbuilder) {
+            
+            let doc = editor.document;
+          
+            // trim all lines
+            doc._lines.map((line, index) => {
+                if (line.match(/[\S]$/ )) {
+                    var addText ="";
+                    if (index > 1 && index === doc.lineCount-1 && line !== '') {
+                        addText = EOL
+                    }
+                    editbuilder.replace(new vscode.Range(new vscode.Position(index, 0), new vscode.Position(index, line.length)), line.replace(/[\S]+$/,'')+addText);
+                }
+                else if (index > 1 && index === doc.lineCount-1 && line !== '') {
+                   editbuilder.insert(new vscode.Position(index, line.length), EOL);
+                }
+            })
 
-        // Only update status if an MD file
-        if (doc.languageId === "markdown") {
-            let wordCount = this._getWordCount(doc);
-
-            // Update the status bar
-            this._statusBarItem.text = wordCount !== 1 ? `$(pencil) ${wordCount} Words` : '$(pencil) 1 Word';
-            this._statusBarItem.show();
-        } else {
-            this._statusBarItem.hide();
-        }
-    }
-
-    public _getWordCount(doc: TextDocument): number {
-        let docContent = doc.getText();
-
-        // Parse out unwanted whitespace so the split is accurate
-        docContent = docContent.replace(/(< ([^>]+)<)/g, '').replace(/\s+/g, ' ');
-        docContent = docContent.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-        let wordCount = 0;
-        if (docContent != "") {
-            wordCount = docContent.split(" ").length;
-        }
-
-        return wordCount;
+            setTimeout(function() {
+                doc.save();
+            }, 200);
+            
+        }).then(()=>{}, (error)=>console.log(error))
     }
 
     public dispose() {
-        this._statusBarItem.dispose();
     }
 }
 
 class WordCounterController {
 
     private _wordCounter: WordCounter;
-    private _disposable: Disposable;
+    private _disposables: Disposable[];
 
     constructor(wordCounter: WordCounter) {
         this._wordCounter = wordCounter;
-        this._wordCounter.updateWordCount();
-
-        // subscribe to selection change and editor activation events
-        let subscriptions: Disposable[] = [];
-        window.onDidChangeTextEditorSelection(this._onEvent, this, subscriptions);
-        window.onDidChangeActiveTextEditor(this._onEvent, this, subscriptions);
-
-        // create a combined disposable from both event subscriptions
-        this._disposable = Disposable.from(...subscriptions);
+        workspace.onDidSaveTextDocument(this._onEvent, this, this._disposables);
     }
 
     private _onEvent() {
-        this._wordCounter.updateWordCount();
+        this._wordCounter.trim()
     }
 
     public dispose() {
-        this._disposable.dispose();
+        this._disposables[0].dispose();
     }
 }
